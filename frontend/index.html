@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1E3A5F" />
+  <title>Bus Tracker Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+<body>
+  <div class="phone" id="app">
+    <div class="status-bar">
+      <span class="time" id="statusTime">2:45</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 24 24"><path d="M12 3C7.5 3 3.7 5.6 2 9.5c1.7 3.9 5.5 6.5 10 6.5s8.3-2.6 10-6.5C20.3 5.6 16.5 3 12 3zm0 11c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M2 22h20V2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+      </div>
+    </div>
+
+    <!-- SPLASH -->
+    <div class="screen active" id="splash">
+      <div class="splash-logo">
+        <svg viewBox="0 0 48 48" fill="none">
+          <rect x="4" y="14" width="40" height="22" rx="4" fill="#1E3A5F"/>
+          <rect x="8" y="18" width="12" height="8" rx="1" fill="#93C5FD"/>
+          <rect x="24" y="18" width="12" height="8" rx="1" fill="#93C5FD"/>
+          <circle cx="12" cy="38" r="4" fill="#1E3A5F"/><circle cx="36" cy="38" r="4" fill="#1E3A5F"/>
+          <circle cx="12" cy="38" r="2" fill="white"/><circle cx="36" cy="38" r="2" fill="white"/>
+          <path d="M4 24h40" stroke="#2563EB" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="splash-title">Bus Tracker</div>
+      <div class="splash-sub">Prototype · Track your ride. Plan your trip.</div>
+      <div class="loader" id="splashLoader"></div>
+      <div class="role-buttons" id="roleButtons">
+        <button class="role-btn" onclick="selectRole('passenger')" aria-label="Passenger">
+          <div class="role-btn-icon"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 12h18"/><circle cx="7" cy="18" r="1.5" fill="white"/><circle cx="17" cy="18" r="1.5" fill="white"/></svg></div>
+          <div class="role-btn-text"><strong>Passenger</strong><span>Track buses and book your ride</span></div>
+        </button>
+        <button class="role-btn" onclick="selectRole('driver')" aria-label="Driver">
+          <div class="role-btn-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></div>
+          <div class="role-btn-text"><strong>Driver / Conductor</strong><span>Staff login</span></div>
+        </button>
+      </div>
+      <div class="demo-note">Bus Tracker · Real-time transit companion</div>
+      <div class="splash-version">v2.0</div>
+    </div>
+
+    <!-- DRIVER LOGIN -->
+    <div class="screen" id="driverLogin">
+      <div class="page-header">
+        <button class="back-btn" onclick="backToRoleSelect()" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">Staff Login</div>
+      </div>
+      <div class="content no-nav">
+        <div class="px-16" style="padding-top:28px">
+          <div class="login-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <h2 class="text-center" style="font-size:18px;font-weight:700;margin-bottom:4px">Driver / Conductor Login</h2>
+          <p class="login-subtitle">Authorized personnel only</p>
+          <div class="demo-creds"><strong>Staff login</strong><br>Driver: <code>GT-0042</code> / <code>driver123</code><br>Conductor: <code>GT-0108</code> / <code>conductor123</code></div>
+          <div class="form-group"><label class="form-label" for="driverId">ID Number</label><input type="text" class="form-input" id="driverId" placeholder="e.g. GT-0042" autocomplete="username" /></div>
+          <div class="form-group">
+            <label class="form-label" for="driverPw">Password</label>
+            <div class="password-wrap">
+              <input type="password" class="form-input" id="driverPw" placeholder="Enter password" autocomplete="current-password" />
+              <button class="toggle-pw" type="button" onclick="togglePassword()" aria-label="Show password"><svg id="eyeIcon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+          </div>
+          <div class="form-error" id="loginError">Invalid ID number or password</div>
+          <button class="btn btn-primary btn-block mt-12" id="loginBtn" onclick="doDriverLogin()">Log in</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOME -->
+    <div class="screen" id="home">
+      <div class="header">
+        <div class="header-top">
+          <div class="greeting"><span id="greetingText">Good afternoon</span><strong id="homeUserName">Welcome back</strong></div>
+          <div class="header-actions">
+            <button class="icon-btn" onclick="navTo('messages')" aria-label="Notifications">
+              <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <span class="badge" id="notifBadge"></span>
+            </button>
+            <button class="icon-btn" onclick="navTo('profile')" aria-label="Profile"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
+          </div>
+        </div>
+        <div class="location-row"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Cubao, Quezon City</div>
+      </div>
+      <div class="content">
+        <div class="px-16 py-12">
+          
+          <div class="section-title">Nearby Buses<button class="link" onclick="navTo('schedule')">View all</button></div>
+          <div class="map-container" id="homeMap">
+            <div id="homeLeaflet" class="leaflet-map"></div>
+            
+            <div class="map-controls">
+              <button class="map-ctrl" onclick="homeMapZoom(1)" aria-label="Zoom in">+</button>
+              <button class="map-ctrl" onclick="homeMapZoom(-1)" aria-label="Zoom out">−</button>
+              <button class="map-ctrl" onclick="homeMapRecenter()" aria-label="Recenter">◎</button>
+            </div>
+          </div>
+          <div class="bus-info-card" id="nearbyBusCard">
+            <div class="bus-info-header"><div class="bus-number" id="nbNumber">GN-204</div><div class="bus-status" id="nbStatus">On route</div></div>
+            <div class="bus-route" id="nbRoute">Cubao → Baguio City</div>
+            <div class="bus-meta">
+              <div class="bus-meta-item"><label>ETA</label><span id="nbEta">12 min</span></div>
+              <div class="bus-meta-item"><label>Seats left</label><span id="nbSeats">8</span></div>
+              <div class="bus-meta-item"><label>Fare</label><span id="nbFare">₱695</span></div>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-outline btn-sm" onclick="openBusDetails('GN-204')">Track Bus</button>
+              <button class="btn btn-primary btn-sm" onclick="startBookingFromBus('GN-204')">Book a Seat</button>
+            </div>
+          </div>
+          <div class="section-title mt-16">Upcoming Schedule<button class="link" onclick="navTo('schedule')">View Schedule</button></div>
+          <div id="homeSchedulePreview"></div>
+          <button class="btn btn-accent btn-block mt-12" onclick="navigate('reserve')"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Book a Ride</button>
+        </div>
+      </div>
+      <div class="bottom-nav" id="bottomNav">
+        <button class="nav-item active" data-nav="home" onclick="navTo('home')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</button>
+        <button class="nav-item" data-nav="schedule" onclick="navTo('schedule')"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Schedule</button>
+        <button class="nav-item" data-nav="messages" onclick="navTo('messages')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Messages</button>
+        <button class="nav-item" data-nav="bookings" onclick="navTo('bookings')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Bookings</button>
+        <button class="nav-item" data-nav="profile" onclick="navTo('profile')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</button>
+      </div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div class="screen" id="schedule">
+      <div class="page-header">
+        <button class="back-btn" onclick="navTo('home')" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">Bus Schedules</div>
+      </div>
+      <div class="search-bar">
+        <div class="search-input-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="search" class="search-input" id="scheduleSearch" placeholder="Search route or bus number..." oninput="onScheduleSearch()" />
+        </div>
+      </div>
+      <div class="filters">
+        <button class="filter-chip active" data-filter="all" onclick="filterSchedule(this,'all')">All Routes</button>
+        <button class="filter-chip" data-filter="baguio" onclick="filterSchedule(this,'baguio')">Cubao–Baguio</button>
+        <button class="filter-chip" data-filter="bataan" onclick="filterSchedule(this,'bataan')">Cubao–Bataan</button>
+        <button class="filter-chip" data-filter="clark" onclick="filterSchedule(this,'clark')">Cubao–Clark</button>
+        <button class="filter-chip" data-filter="baler" onclick="filterSchedule(this,'baler')">Cubao–Baler</button>
+      </div>
+      <div class="content" id="scheduleList"></div>
+      <div class="bottom-nav">
+        <button class="nav-item" data-nav="home" onclick="navTo('home')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</button>
+        <button class="nav-item active" data-nav="schedule" onclick="navTo('schedule')"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Schedule</button>
+        <button class="nav-item" data-nav="messages" onclick="navTo('messages')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Messages</button>
+        <button class="nav-item" data-nav="bookings" onclick="navTo('bookings')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Bookings</button>
+        <button class="nav-item" data-nav="profile" onclick="navTo('profile')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</button>
+      </div>
+    </div>
+
+    <!-- BUS DETAILS -->
+    <div class="screen" id="busDetails">
+      <div class="page-header">
+        <button class="back-btn" onclick="goBack()" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">Bus Details</div>
+      </div>
+      <div class="content no-nav">
+        <div class="px-16 py-12">
+          <div class="map-container large" id="detailMap">
+            <div id="detailLeaflet" class="leaflet-map"></div>
+            
+            <div class="map-controls">
+              <button class="map-ctrl" onclick="toggleSimMovement()" id="simMoveBtn" aria-label="Toggle simulation">▶</button>
+              <button class="map-ctrl" onclick="resetSimPosition()" aria-label="Reset">↺</button>
+              <button class="map-ctrl" onclick="detailMapRecenter()" aria-label="Recenter">◎</button>
+            </div>
+          </div>
+          <div class="bus-info-card" style="margin-top:12px">
+            <div class="bus-info-header"><div class="bus-number" id="bdNumber">GN-204</div><div class="bus-status" id="bdStatus">On Route</div></div>
+            <div class="bus-route" id="bdRoute">Cubao Terminal → Baguio City</div>
+            <div class="bus-meta">
+              <div class="bus-meta-item"><label>ETA</label><span id="bdEta">~4h 45m</span></div>
+              <div class="bus-meta-item"><label>Seats left</label><span id="bdSeats">8</span></div>
+              <div class="bus-meta-item"><label>Fare</label><span id="bdFare">₱695</span></div>
+            </div>
+            <div class="bus-meta">
+              <div class="bus-meta-item"><label>Departure</label><span id="bdDep">2:00 PM</span></div>
+              <div class="bus-meta-item"><label>Expected Arrival</label><span id="bdArr">6:45 PM</span></div>
+              <div class="bus-meta-item"><label>Location</label><span id="bdLoc">NLEX</span></div>
+            </div>
+            <div class="progress-bar-wrap"><div class="progress-bar" id="tripProgress" style="width:35%"></div></div>
+            <div class="text-xs text-muted mt-8" id="progressLabel">Trip progress</div>
+            <div class="btn-group mt-12">
+              <button class="btn btn-outline" onclick="toggleSimMovement()">Track Live</button>
+              <button class="btn btn-primary" onclick="startBookingFromBus(currentBusId)">Book a Seat</button>
+            </div>
+            <div class="section-title mt-16">Route Stops</div>
+            <div class="card" style="padding:4px 16px" id="stopList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div class="screen" id="messages">
+      <div class="page-header">
+        <button class="back-btn" onclick="navTo('home')" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">Messages</div>
+        <button class="btn btn-sm btn-outline" style="padding:6px 10px;font-size:12px" onclick="markAllRead()">Mark all read</button>
+      </div>
+      <div class="content" id="messageList"></div>
+      <div class="bottom-nav">
+        <button class="nav-item" data-nav="home" onclick="navTo('home')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</button>
+        <button class="nav-item" data-nav="schedule" onclick="navTo('schedule')"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Schedule</button>
+        <button class="nav-item active" data-nav="messages" onclick="navTo('messages')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Messages</button>
+        <button class="nav-item" data-nav="bookings" onclick="navTo('bookings')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Bookings</button>
+        <button class="nav-item" data-nav="profile" onclick="navTo('profile')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</button>
+      </div>
+    </div>
+
+    <!-- BOOKINGS -->
+    <div class="screen" id="bookings">
+      <div class="page-header">
+        <button class="back-btn" onclick="navTo('home')" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">My Bookings</div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-tab="upcoming" onclick="switchBookingTab(this,'upcoming')">Upcoming</button>
+        <button class="tab" data-tab="completed" onclick="switchBookingTab(this,'completed')">Completed</button>
+        <button class="tab" data-tab="cancelled" onclick="switchBookingTab(this,'cancelled')">Cancelled</button>
+      </div>
+      <div class="content" id="bookingsList"></div>
+      <div class="bottom-nav">
+        <button class="nav-item" data-nav="home" onclick="navTo('home')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</button>
+        <button class="nav-item" data-nav="schedule" onclick="navTo('schedule')"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Schedule</button>
+        <button class="nav-item" data-nav="messages" onclick="navTo('messages')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Messages</button>
+        <button class="nav-item active" data-nav="bookings" onclick="navTo('bookings')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Bookings</button>
+        <button class="nav-item" data-nav="profile" onclick="navTo('profile')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</button>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="screen" id="profile">
+      <div class="page-header">
+        <button class="back-btn" onclick="navTo('home')" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">Profile</div>
+      </div>
+      <div class="content">
+        <div class="px-16" style="padding-top:24px">
+          <div class="profile-avatar" id="profileAvatar">JD</div>
+          <div class="profile-name" id="profileName">Juan Dela Cruz</div>
+          <div class="profile-email" id="profileEmail">juan.delacruz@email.com</div>
+        </div>
+        <div class="profile-menu-item" onclick="openEditProfile()"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Account Settings<svg class="chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        <div class="profile-menu-item" onclick="openPaymentMethods()"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Payment Methods<svg class="chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        <div class="profile-menu-item" onclick="openNotifSettings()"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<svg class="chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        <div class="profile-menu-item" onclick="openFeedbackForm()"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Send Feedback<svg class="chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        <div class="profile-menu-item" onclick="openHelp()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Help & Support<svg class="chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        <div class="profile-menu-item" onclick="openAbout()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>About<svg class="chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        <div class="profile-menu-item" onclick="confirmResetData()"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>Reset Data<svg class="chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        <div class="profile-menu-item" onclick="backToRoleSelect()"><svg viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>Switch Role<svg class="chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        <div class="px-16 mt-16"><button class="btn btn-outline btn-block" onclick="showToast('Signed out'); backToRoleSelect()">Sign Out</button></div>
+        <p class="text-center text-sm text-muted mt-16" style="padding-bottom:20px">Bus Tracker · v2.0</p>
+      </div>
+      <div class="bottom-nav">
+        <button class="nav-item" data-nav="home" onclick="navTo('home')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</button>
+        <button class="nav-item" data-nav="schedule" onclick="navTo('schedule')"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Schedule</button>
+        <button class="nav-item" data-nav="messages" onclick="navTo('messages')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Messages</button>
+        <button class="nav-item" data-nav="bookings" onclick="navTo('bookings')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Bookings</button>
+        <button class="nav-item active" data-nav="profile" onclick="navTo('profile')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</button>
+      </div>
+    </div>
+
+    <!-- RESERVE -->
+    <div class="screen" id="reserve">
+      <div class="page-header">
+        <button class="back-btn" onclick="goBack()" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">Reserve & Ride</div>
+      </div>
+      <div class="content no-nav">
+        <div class="px-16 py-12">
+          <div class="section-title">Select Route</div>
+          <div class="form-group"><label class="form-label" for="originSelect">Origin</label>
+            <select class="form-select" id="originSelect">
+              <option value="Cubao">Cubao Terminal, Quezon City</option>
+              <option value="Pasay">Pasay Terminal</option>
+              <option value="Avenida">Avenida Terminal, Manila</option>
+              <option value="Clark">Clark Airport</option>
+              <option value="Baguio">Baguio City</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label" for="destSelect">Destination</label>
+            <select class="form-select" id="destSelect">
+              <option value="Baguio">Baguio City</option>
+              <option value="Mariveles">Mariveles, Bataan</option>
+              <option value="Balanga">Balanga, Bataan</option>
+              <option value="Clark">Clark Airport</option>
+              <option value="Baler">Baler, Aurora</option>
+              <option value="Cubao">Cubao Terminal</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label" for="travelDate">Travel Date</label><input type="date" class="form-input" id="travelDate" /></div>
+            <div class="form-group"><label class="form-label" for="passengerCount">Passengers</label>
+              <select class="form-select" id="passengerCount"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+            </div>
+          </div>
+          <div class="card" style="padding:14px;margin-top:8px;margin-bottom:20px">
+            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:6px">Selected Route</div>
+            <div style="font-size:16px;font-weight:700;color:var(--primary)" id="routePreview">Cubao → Baguio City</div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-top:4px" id="datePreview">Today · 1 passenger</div>
+          </div>
+          <button class="btn btn-primary btn-block" onclick="goToTripSelection()">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRIP SELECT -->
+    <div class="screen" id="tripSelect">
+      <div class="page-header">
+        <button class="back-btn" onclick="navigate('reserve')" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">Select Trip</div>
+      </div>
+      <div class="content no-nav"><div class="px-16 py-12" id="tripList"></div></div>
+    </div>
+
+    <!-- SEAT SELECT -->
+    <div class="screen" id="seatSelect">
+      <div class="page-header">
+        <button class="back-btn" onclick="navigate('tripSelect')" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">Select Seat</div>
+      </div>
+      <div class="content no-nav">
+        <div class="px-16 py-12">
+          <div class="seat-map">
+            <div class="bus-front">FRONT · DRIVER</div>
+            <div id="seatGrid"></div>
+            <div class="seat-legend">
+              <div class="legend-item"><div class="legend-swatch" style="background:#DBEAFE;border:1.5px solid #93C5FD"></div> Available</div>
+              <div class="legend-item"><div class="legend-swatch" style="background:var(--accent)"></div> Selected</div>
+              <div class="legend-item"><div class="legend-swatch" style="background:var(--surface-2);border:1.5px solid var(--border)"></div> Occupied</div>
+            </div>
+          </div>
+          <div class="summary-card mt-16">
+            <div class="summary-row"><span class="label">Selected Seat</span><span class="value" id="selectedSeatLabel">None</span></div>
+            <div class="summary-row"><span class="label">Passengers</span><span class="value" id="seatPassCount">1</span></div>
+            <div class="summary-row"><span class="label">Fare per seat</span><span class="value" id="seatFare">₱695</span></div>
+            <div class="summary-total"><span>Total</span><span id="seatTotal">₱695</span></div>
+          </div>
+          <button class="btn btn-primary btn-block" id="seatContinueBtn" disabled onclick="goToPassengerInfo()">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASSENGER INFO -->
+    <div class="screen" id="passengerInfo">
+      <div class="page-header">
+        <button class="back-btn" onclick="navigate('seatSelect')" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">Passenger Details</div>
+      </div>
+      <div class="content no-nav">
+        <div class="px-16 py-12">
+          <div class="form-group"><label class="form-label" for="paxName">Full Name</label><input type="text" class="form-input" id="paxName" placeholder="Juan Dela Cruz" /><div class="form-error" id="paxNameErr">Name is required</div></div>
+          <div class="form-group"><label class="form-label" for="paxPhone">Mobile Number</label><input type="tel" class="form-input" id="paxPhone" placeholder="09XX XXX XXXX" /><div class="form-error" id="paxPhoneErr">Valid PH mobile number required</div></div>
+          <div class="form-group"><label class="form-label" for="paxEmail">Email (optional)</label><input type="email" class="form-input" id="paxEmail" placeholder="you@email.com" /></div>
+          <button class="btn btn-primary btn-block" onclick="goToPayment()">Continue to Payment</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENT -->
+    <div class="screen" id="payment">
+      <div class="page-header">
+        <button class="back-btn" onclick="navigate('passengerInfo')" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">Confirm Booking</div>
+      </div>
+      <div class="content no-nav">
+        <div class="px-16 py-12" id="paymentContent">
+          <div class="section-title">Trip Summary</div>
+          <div class="summary-card">
+            <div class="summary-row"><span class="label">Route</span><span class="value" id="payRoute">—</span></div>
+            <div class="summary-row"><span class="label">Date</span><span class="value" id="payDate">—</span></div>
+            <div class="summary-row"><span class="label">Departure</span><span class="value" id="payDep">—</span></div>
+            <div class="summary-row"><span class="label">Bus</span><span class="value" id="payBus">—</span></div>
+            <div class="summary-row"><span class="label">Seat</span><span class="value" id="paySeat">—</span></div>
+            <div class="summary-row"><span class="label">Passengers</span><span class="value" id="payPax">—</span></div>
+            <div class="summary-row"><span class="label">Passenger</span><span class="value" id="payPaxName">—</span></div>
+            <div class="summary-total"><span>Total Fare</span><span id="payTotal">—</span></div>
+          </div>
+          <div class="section-title">Payment Method</div>
+          <div class="payment-note mb-12">Select a payment method to complete your booking.</div>
+          <div class="payment-option selected" onclick="selectPayment(this)" data-method="GCash"><input type="radio" name="pay" checked /><div class="payment-radio"></div><span class="payment-label">GCash</span></div>
+          <div class="payment-option" onclick="selectPayment(this)" data-method="Maya"><input type="radio" name="pay" /><div class="payment-radio"></div><span class="payment-label">Maya</span></div>
+          <div class="payment-option" onclick="selectPayment(this)" data-method="Card"><input type="radio" name="pay" /><div class="payment-radio"></div><span class="payment-label">Credit / Debit Card</span></div>
+          <div class="payment-option" onclick="selectPayment(this)" data-method="Terminal"><input type="radio" name="pay" /><div class="payment-radio"></div><span class="payment-label">Pay at Terminal</span></div>
+          <button class="btn btn-primary btn-block mt-16" id="confirmBookBtn" onclick="confirmReservation()">Confirm Reservation</button>
+        </div>
+        <div class="px-16 py-12 hidden" id="confirmedContent">
+          <div class="confirm-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <h2 class="text-center" style="font-size:20px;font-weight:700;margin-bottom:4px">Reservation Confirmed</h2>
+          <p class="text-center text-sm text-muted mb-16">Your seat has been reserved successfully.</p>
+          <div class="summary-card">
+            <div class="summary-row"><span class="label">Booking Ref</span><span class="value" id="confRef">GT-20261006-4821</span></div>
+            <div class="summary-row"><span class="label">Bus</span><span class="value" id="confBus">—</span></div>
+            <div class="summary-row"><span class="label">Route</span><span class="value" id="confRoute">—</span></div>
+            <div class="summary-row"><span class="label">Departure</span><span class="value" id="confDep">—</span></div>
+            <div class="summary-row"><span class="label">Seat</span><span class="value" id="confSeat">—</span></div>
+          </div>
+          <div class="qr-placeholder" id="ticketQR"><div class="qr-grid" id="qrGrid"></div><span>Ticket QR Code</span></div>
+          <button class="btn btn-primary btn-block" onclick="viewBookingAfterConfirm()">View Booking</button>
+          <button class="btn btn-outline btn-block mt-12" onclick="navTo('home')">Back to Home</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOOKING DETAIL -->
+    <div class="screen" id="bookingDetail">
+      <div class="page-header">
+        <button class="back-btn" onclick="navigate('bookings')" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">Booking Details</div>
+      </div>
+      <div class="content no-nav"><div class="px-16 py-12" id="bookingDetailContent"></div></div>
+    </div>
+
+    <!-- EDIT PROFILE -->
+    <div class="screen" id="editProfile">
+      <div class="page-header">
+        <button class="back-btn" onclick="navTo('profile')" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">Edit Profile</div>
+      </div>
+      <div class="content no-nav">
+        <div class="px-16 py-12">
+          <div class="form-group"><label class="form-label" for="editName">Full Name</label><input type="text" class="form-input" id="editName" /><div class="form-error" id="editNameErr">Name is required</div></div>
+          <div class="form-group"><label class="form-label" for="editEmail">Email</label><input type="email" class="form-input" id="editEmail" /><div class="form-error" id="editEmailErr">Valid email required</div></div>
+          <div class="form-group"><label class="form-label" for="editPhone">Mobile Number</label><input type="tel" class="form-input" id="editPhone" /></div>
+          <button class="btn btn-primary btn-block" onclick="saveProfile()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIF SETTINGS -->
+    <div class="screen" id="notifSettings">
+      <div class="page-header">
+        <button class="back-btn" onclick="navTo('profile')" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">Notifications</div>
+      </div>
+      <div class="content no-nav">
+        <div class="px-16 py-12">
+          <div class="card" style="padding:4px 16px">
+            <div class="toggle-row"><div><div class="toggle-label">Bus arrival alerts</div><div class="toggle-desc">Notify when bus is near</div></div><button class="toggle on" id="togArrival" onclick="togglePref(this,'arrival')" aria-label="Toggle"></button></div>
+            <div class="toggle-row"><div><div class="toggle-label">Booking confirmations</div><div class="toggle-desc">Email & in-app notices</div></div><button class="toggle on" id="togBooking" onclick="togglePref(this,'booking')" aria-label="Toggle"></button></div>
+            <div class="toggle-row"><div><div class="toggle-label">Delay & route updates</div><div class="toggle-desc">Traffic and weather advisories</div></div><button class="toggle on" id="togDelay" onclick="togglePref(this,'delay')" aria-label="Toggle"></button></div>
+            <div class="toggle-row"><div><div class="toggle-label">Promotional offers</div><div class="toggle-desc">Discounts and new routes</div></div><button class="toggle" id="togPromo" onclick="togglePref(this,'promo')" aria-label="Toggle"></button></div>
+          </div>
+          <p class="text-sm text-muted mt-16">Preferences are saved locally on this device (demo).</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- FEEDBACK -->
+    <div class="screen" id="feedback">
+      <div class="page-header">
+        <button class="back-btn" onclick="navTo('profile')" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">Send Feedback</div>
+      </div>
+      <div class="content no-nav">
+        <div class="px-16 py-12">
+          <div class="form-group"><label class="form-label">Rating</label>
+            <div class="star-rating" id="starRating">
+              <button class="star-btn" data-v="1" onclick="setRating(1)">★</button>
+              <button class="star-btn" data-v="2" onclick="setRating(2)">★</button>
+              <button class="star-btn" data-v="3" onclick="setRating(3)">★</button>
+              <button class="star-btn" data-v="4" onclick="setRating(4)">★</button>
+              <button class="star-btn" data-v="5" onclick="setRating(5)">★</button>
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label" for="feedbackText">Comments</label><textarea class="form-textarea" id="feedbackText" placeholder="Tell us about your experience..."></textarea><div class="form-error" id="feedbackErr">Please select a rating and write a short comment</div></div>
+          <button class="btn btn-primary btn-block" onclick="submitFeedback()">Submit Feedback</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HELP -->
+    <div class="screen" id="help">
+      <div class="page-header">
+        <button class="back-btn" onclick="navTo('profile')" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">Help & Support</div>
+      </div>
+      <div class="content no-nav">
+        <div class="px-16 py-12">
+          <div class="card" style="padding:16px;margin-bottom:12px">
+            <div class="fw-600 mb-8">Frequently Asked Questions</div>
+            <div class="text-sm" style="line-height:1.6;color:var(--text-secondary)">
+              <p class="mb-8"><strong>How do I track a bus?</strong><br>Open Home or Schedule, select a bus, then tap Track Bus to follow its location on the map.</p>
+              <p class="mb-8"><strong>How do I book a seat?</strong><br>Use Book a Ride or Book on any schedule card, choose seats, enter details, and confirm (demo payment).</p>
+              <p class="mb-8"><strong>Can I cancel a booking?</strong><br>Yes — open the booking under My Bookings and use Cancel. Seats are released in the demo.</p>
+              <p><strong>Is this live GPS?</strong><br>The app shows live map tracking and ETAs based on the assigned route and trip progress.</p>
+            </div>
+          </div>
+          <div class="card" style="padding:16px">
+            <div class="fw-600 mb-8">Contact Support</div>
+            <div class="text-sm" style="color:var(--text-secondary);line-height:1.6">Email: support@bustracker-demo.ph<br>Hotline: (02) 8XXX-XXXX<br>Hours: Mon–Sun 6:00 AM – 10:00 PM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABOUT -->
+    <div class="screen" id="about">
+      <div class="page-header">
+        <button class="back-btn" onclick="navTo('profile')" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">About</div>
+      </div>
+      <div class="content no-nav">
+        <div class="px-16 py-12 text-center">
+          <div class="splash-logo" style="margin:0 auto 16px;width:72px;height:72px">
+            <svg viewBox="0 0 48 48" fill="none" style="width:44px;height:44px">
+              <rect x="4" y="14" width="40" height="22" rx="4" fill="#1E3A5F"/>
+              <rect x="8" y="18" width="12" height="8" rx="1" fill="#93C5FD"/>
+              <rect x="24" y="18" width="12" height="8" rx="1" fill="#93C5FD"/>
+              <circle cx="12" cy="38" r="4" fill="#1E3A5F"/><circle cx="36" cy="38" r="4" fill="#1E3A5F"/>
+              <circle cx="12" cy="38" r="2" fill="white"/><circle cx="36" cy="38" r="2" fill="white"/>
+              <path d="M4 24h40" stroke="#2563EB" stroke-width="2"/>
+            </svg>
+          </div>
+          <div style="font-size:22px;font-weight:700;margin-bottom:4px">Bus Tracker Prototype</div>
+          <div class="text-sm text-muted mb-16">v2.0</div>
+          <p class="text-sm" style="color:var(--text-secondary);line-height:1.5;text-align:left"><strong>Tap In, Track On:</strong> A Real-Time GPS-Based Bus Tracking Android App for Bus Commuters. Passenger booking, live map tracking, schedule search, and staff tools for drivers and conductors.</p>
+          <p class="text-xs text-muted mt-16">Sample Philippine routes and fares. Not connected to live GPS or payment systems.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- DRIVER HOME -->
+    <div class="screen" id="driverHome">
+      <div class="header">
+        <div class="header-top"><div class="greeting">Staff Portal<strong id="driverWelcome">Welcome</strong></div></div>
+        <div class="location-row"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Bus <span id="driverBusLabel">GN-204</span> · <span id="driverDutyStatus">On duty</span></div>
+      </div>
+      <div class="content">
+        <div class="px-16 py-12">
+          <!-- Assigned bus summary -->
+          <div class="card" style="padding:14px;margin-bottom:12px">
+            <div class="section-title" style="margin-bottom:6px">Assigned Bus</div>
+            <div style="font-size:16px;font-weight:700;color:var(--primary)" id="staffBusTitle">GN-204</div>
+            <div class="text-sm text-muted" id="staffBusRoute">Cubao → Baguio City · 2:00 PM</div>
+          </div>
+
+          <!-- Seat availability stats -->
+          <div class="section-title">Seat Availability</div>
+          <div class="staff-stats" id="staffSeatStats">
+            <div class="staff-stat"><div class="val" id="statCapacity">32</div><div class="lbl">Capacity</div></div>
+            <div class="staff-stat"><div class="val" id="statBooked">0</div><div class="lbl">Booked</div></div>
+            <div class="staff-stat"><div class="val" id="statAvailable">0</div><div class="lbl">Available</div></div>
+            <div class="staff-stat"><div class="val" id="statBoarded">0</div><div class="lbl">Boarded</div></div>
+            <div class="staff-stat"><div class="val" id="statNotBoarded">0</div><div class="lbl">Not Boarded</div></div>
+            <div class="staff-stat"><div class="val" id="statCancelled">0</div><div class="lbl">Cancelled</div></div>
+          </div>
+
+          <!-- Interactive seat map -->
+          <div class="section-title">Bus Seat Map</div>
+          <div class="seat-map" id="staffSeatMapWrap">
+            <div class="bus-front">FRONT · DRIVER</div>
+            <div id="staffSeatGrid"></div>
+            <div class="seat-legend">
+              <div class="legend-item"><div class="legend-swatch" style="background:#DBEAFE;border:1.5px solid #93C5FD"></div> Available</div>
+              <div class="legend-item"><div class="legend-swatch" style="background:#FEE2E2;border:1.5px solid #FCA5A5"></div> Booked</div>
+              <div class="legend-item"><div class="legend-swatch" style="background:#D1FAE5;border:1.5px solid #6EE7B7"></div> Boarded</div>
+              <div class="legend-item"><div class="legend-swatch" style="background:#E2E8F0;border:1.5px solid var(--border)"></div> Blocked</div>
+            </div>
+          </div>
+
+          <!-- Seat detail panel -->
+          <div class="staff-detail-panel" id="staffSeatDetail">
+            <h4 id="staffDetailTitle">Seat Details</h4>
+            <div class="summary-row"><span class="label">Passenger</span><span class="value" id="sdName">—</span></div>
+            <div class="summary-row"><span class="label">Booking Ref</span><span class="value" id="sdRef">—</span></div>
+            <div class="summary-row"><span class="label">Seat</span><span class="value" id="sdSeat">—</span></div>
+            <div class="summary-row"><span class="label">Pickup</span><span class="value" id="sdPickup">—</span></div>
+            <div class="summary-row"><span class="label">Drop-off</span><span class="value" id="sdDropoff">—</span></div>
+            <div class="summary-row"><span class="label">Status</span><span class="value" id="sdStatus">—</span></div>
+            <div class="summary-row"><span class="label">Boarding</span><span class="value" id="sdBoarding">—</span></div>
+            <button class="btn btn-outline btn-sm btn-block mt-12" onclick="clearStaffSeatSelection()">Close</button>
+          </div>
+
+          <!-- Passenger manifest -->
+          <div class="section-title mt-16">Passenger Manifest</div>
+          <div class="search-input-wrap mb-8">
+            <svg viewBox="0 0 24 24" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--text-muted);fill:none;stroke-width:2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="search" class="search-input" id="manifestSearch" placeholder="Search name or booking ref..." oninput="onManifestSearch()" style="padding-left:40px" />
+          </div>
+          <div class="filters" style="padding:0 0 10px;border:none;background:transparent;overflow-x:auto">
+            <button class="filter-chip active" data-mfilter="all" onclick="filterManifest(this,'all')">All</button>
+            <button class="filter-chip" data-mfilter="not-boarded" onclick="filterManifest(this,'not-boarded')">Not Boarded</button>
+            <button class="filter-chip" data-mfilter="boarded" onclick="filterManifest(this,'boarded')">Boarded</button>
+            <button class="filter-chip" data-mfilter="cancelled" onclick="filterManifest(this,'cancelled')">Cancelled</button>
+          </div>
+          <div id="passengerManifest"></div>
+
+          <!-- Live Map -->
+          <div class="section-title mt-16">Live Map</div>
+          <div class="map-container driver-map">
+            <div id="driverLeaflet" class="leaflet-map"></div>
+            </div>
+
+          <div class="card mt-12" style="padding:14px">
+            <div class="section-title" style="margin-bottom:8px">Trip Controls</div>
+            <div class="text-sm text-muted mb-8">Status: <strong id="tripStatusLabel">Idle</strong></div>
+            <div class="trip-controls">
+              <button class="btn btn-success btn-sm" id="btnStartTrip" onclick="startTrip()">Start Trip</button>
+              <button class="btn btn-outline btn-sm" id="btnPauseTrip" onclick="pauseTrip()" disabled>Pause</button>
+              <button class="btn btn-outline btn-sm" id="btnResumeTrip" onclick="resumeTrip()" disabled>Resume</button>
+              <button class="btn btn-danger btn-sm" id="btnEndTrip" onclick="confirmEndTrip()" disabled>End Trip</button>
+            </div>
+          </div>
+          <div class="section-title mt-16">Next Trip</div>
+          <div class="card" style="overflow:hidden">
+            <table class="trip-table">
+              <thead><tr><th>Route</th><th>Arriving</th></tr></thead>
+              <tbody>
+                <tr onclick="openNextPickup('Cubao–Baguio','10:30 AM')"><td>Cubao–Baguio</td><td>10:30 AM</td></tr>
+                <tr onclick="openNextPickup('Cubao–Clark','6:00 PM')"><td>Cubao–Clark</td><td>6:00 PM</td></tr>
+                <tr onclick="openNextPickup('Cubao–Bataan','10:00 AM')"><td>Cubao–Bataan</td><td>10:00 AM</td></tr>
+                <tr onclick="openNextPickup('Cubao–Baler','4:30 PM')"><td>Cubao–Baler</td><td>4:30 PM</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <button class="btn btn-primary btn-block mt-16" onclick="navigate('tripSummary')">View trip summary</button>
+        </div>
+      </div>
+      <div class="bottom-nav">
+        <button class="nav-item active" data-nav="driverHome" onclick="driverNav('driverHome')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</button>
+        <button class="nav-item" data-nav="driverScan" onclick="driverNav('driverScan')"><svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>Scan</button>
+        <button class="nav-item" data-nav="driverProfile" onclick="driverNav('driverProfile')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</button>
+      </div>
+    </div>
+
+    <!-- NEXT PICKUP -->
+    <div class="screen" id="nextPickup">
+      <div class="page-header">
+        <button class="back-btn" onclick="goBack()" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">Next Pickup</div>
+      </div>
+      <div class="content no-nav">
+        <div class="px-16 py-12">
+          <div class="card" style="padding:16px;margin-bottom:16px">
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Passenger</div>
+            <div style="font-size:18px;font-weight:700;margin-bottom:12px" id="pickupName">Ana Reyes</div>
+            <div class="bus-meta" style="margin-bottom:0">
+              <div class="bus-meta-item"><label>Location</label><span id="pickupLoc">Cubao Terminal Gate 3</span></div>
+              <div class="bus-meta-item"><label>Contact</label><span id="pickupNum">09XX-XXX-4821</span></div>
+            </div>
+            <div class="action-btns">
+              <button class="action-btn" onclick="showToast('Passenger notified (demo)')"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Alert</button>
+              <button class="action-btn" onclick="showToast('Calling passenger… (demo)')"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call</button>
+              <button class="action-btn" onclick="openQuickReply()"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Message</button>
+            </div>
+          </div>
+          <div class="section-title">Feedback Inbox</div>
+          <div class="card" style="padding:14px 16px">
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">Bus Info: <strong id="feedbackBus">GN-204</strong></div>
+            <div class="feedback-item"><div class="feedback-avatar">MR</div><div><div class="feedback-stars">★★★★★</div><div class="feedback-comment">Smooth ride, driver was very professional. Thank you!</div></div></div>
+            <div class="feedback-item"><div class="feedback-avatar">KL</div><div><div class="feedback-stars">★★★★☆</div><div class="feedback-comment">Bus arrived on time. Seats were clean.</div></div></div>
+            <div class="feedback-item"><div class="feedback-avatar">JP</div><div><div class="feedback-stars">★★★★★</div><div class="feedback-comment">Great service from Cubao to Baguio. Will book again.</div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="sheet-overlay" id="replyOverlay" onclick="closeQuickReply()"></div>
+      <div class="quick-reply-sheet" id="quickReplySheet">
+        <h3>Quick Reply</h3>
+        <div class="quick-reply-item" onclick="sendQuickReply('I\'m 5 minutes away')">I'm 5 minutes away</div>
+        <div class="quick-reply-item" onclick="sendQuickReply('Please wait at Gate 3')">Please wait at Gate 3</div>
+        <div class="quick-reply-item" onclick="sendQuickReply('Traffic delay — ETA 10 min')">Traffic delay — ETA 10 min</div>
+        <div class="quick-reply-item" onclick="sendQuickReply('Bus is at the terminal now')">Bus is at the terminal now</div>
+        <button class="btn btn-outline btn-block mt-12" onclick="closeQuickReply()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- TRIP SUMMARY -->
+    <div class="screen" id="tripSummary">
+      <div class="page-header">
+        <button class="back-btn" onclick="goBack()" aria-label="Back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="page-title">Trip Summary</div>
+      </div>
+      <div class="content no-nav">
+        <div class="px-16 py-12">
+          <div class="section-title">Trip Summary</div>
+          <div class="summary-card">
+            <div class="summary-row"><span class="label">Route</span><span class="value">Cubao → Baguio City</span></div>
+            <div class="summary-row"><span class="label">Departure</span><span class="value">2:00 PM</span></div>
+            <div class="summary-row"><span class="label">Arrival</span><span class="value">6:45 PM</span></div>
+            <div class="summary-row"><span class="label">Passengers boarded</span><span class="value" id="boardedCount">24</span></div>
+            <div class="summary-row"><span class="label">Seats left</span><span class="value" id="seatsLeftCount">8</span></div>
+            <div class="summary-row"><span class="label">Status</span><span class="value"><span class="bus-status" id="summaryStatus">On Route</span></span></div>
+          </div>
+          <div class="section-title">Dispatch</div>
+          <div class="card" style="padding:14px 16px" id="dispatchList">
+            <div class="dispatch-item" data-id="d1"><div class="dispatch-msg">⚠ Delay notice: Heavy traffic on NLEX</div><div class="dispatch-time">Today · 1:45 PM</div><button class="btn btn-sm btn-outline" onclick="acknowledgeDispatch(this)">Acknowledge</button></div>
+            <div class="dispatch-item" data-id="d2"><div class="dispatch-msg">Route change: Use SCTEX alternate</div><div class="dispatch-time">Today · 12:30 PM</div><button class="btn btn-sm btn-outline" onclick="acknowledgeDispatch(this)">Acknowledge</button></div>
+            <div class="dispatch-item" data-id="d3"><div class="dispatch-msg">Weather advisory: Rain expected in Baguio</div><div class="dispatch-time">Today · 11:00 AM</div><button class="btn btn-sm btn-outline" onclick="acknowledgeDispatch(this)">Acknowledge</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DRIVER SCAN -->
+    <div class="screen" id="driverScan">
+      <div class="page-header"><div class="page-title" style="margin-left:4px">Scan Ticket</div></div>
+      <div class="content">
+        <div class="px-16 py-12">
+          <p class="text-center text-sm text-muted mb-8">Point at passenger ticket QR or enter reference manually</p>
+          <div class="scanner-frame"><div class="scanner-inner"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg><div>QR Scanner</div></div></div>
+          <div class="form-group"><label class="form-label" for="manualTicket">Or enter booking reference</label><input type="text" class="form-input" id="manualTicket" placeholder="e.g. GT-20261007-3192" /></div>
+          <button class="btn btn-primary btn-block" onclick="simulateScan()">Validate Ticket</button>
+          <button class="btn btn-outline btn-block mt-8" onclick="simulateScanInvalid()">Simulate Invalid</button>
+          <div id="scanResult" class="card mt-16 hidden" style="padding:14px;text-align:center">
+            <div id="scanResultTitle" style="font-weight:700;margin-bottom:6px"></div>
+            <div class="text-sm" id="scanResultDetail"></div>
+          </div>
+        </div>
+      </div>
+      <div class="bottom-nav">
+        <button class="nav-item" data-nav="driverHome" onclick="driverNav('driverHome')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</button>
+        <button class="nav-item active" data-nav="driverScan" onclick="driverNav('driverScan')"><svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>Scan</button>
+        <button class="nav-item" data-nav="driverProfile" onclick="driverNav('driverProfile')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</button>
+      </div>
+    </div>
+
+    <!-- DRIVER PROFILE -->
+    <div class="screen" id="driverProfile">
+      <div class="page-header"><div class="page-title" style="margin-left:4px">Staff Profile</div></div>
+      <div class="content">
+        <div class="px-16" style="padding-top:24px">
+          <div class="profile-avatar" id="driverAvatar">JD</div>
+          <div class="profile-name" id="driverProfileName">—</div>
+          <div class="profile-email" id="driverProfileId">ID: —</div>
+        </div>
+        <div class="summary-card" style="margin:0 16px 16px">
+          <div class="summary-row"><span class="label">Assigned Bus</span><span class="value" id="driverAssignedBus">GN-204</span></div>
+          <div class="summary-row"><span class="label">Role</span><span class="value" id="driverRole">Driver</span></div>
+          <div class="summary-row"><span class="label">Status</span><span class="value"><span class="bus-status" id="driverStatusBadge">On Duty</span></span></div>
+        </div>
+        <div class="px-16"><button class="btn btn-outline btn-block" onclick="confirmDriverLogout()">Log out</button></div>
+        <p class="text-center text-sm text-muted mt-16" style="padding-bottom:20px">Bus Tracker · Staff Portal</p>
+      </div>
+      <div class="bottom-nav">
+        <button class="nav-item" data-nav="driverHome" onclick="driverNav('driverHome')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</button>
+        <button class="nav-item" data-nav="driverScan" onclick="driverNav('driverScan')"><svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>Scan</button>
+        <button class="nav-item active" data-nav="driverProfile" onclick="driverNav('driverProfile')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</button>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal" id="modalBox">
+        <h3 id="modalTitle">Confirm</h3>
+        <p id="modalMessage">Are you sure?</p>
+        <div class="modal-actions">
+          <button class="btn btn-outline" id="modalCancel" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" id="modalConfirm">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
