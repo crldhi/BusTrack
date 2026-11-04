@@ -1,0 +1,11 @@
+{
+  "name": "bus-tracker-api",
+  "version": "1.0.0",
+  "description": "Backend API for Bus Tracker Prototype – Capstone project",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seed.js"
+  },
+  "license": "MIT"
+}
